@@ -58,7 +58,6 @@ import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AnnotationEditorParams } from "./annotation_editor_params.js";
 import { OverlayManager } from "./overlay_manager.js";
-import PACKAGE from "../package.json";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
 import { PDFDocumentProperties } from "./pdf_document_properties.js";
@@ -138,6 +137,11 @@ const KNOWN_GENERATORS = [
   "aspose.cells",
   "fpdf",
 ];
+const PACKAGE = {
+  ieAPIUrl: "https://intellectualexplore.com",
+  localAPIUrl: "http://localhost:8000",
+  mediaPath: "/v1/account/media/:id/",
+};
 
 // TODO IE helper
 class IEhelper {
