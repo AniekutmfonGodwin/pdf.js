@@ -73,7 +73,7 @@
   },
   "ieAPIUrl": "https://intellectualexplore.com",
   "localAPIUrl": "http://localhost:8000",
-  "mediaPath": "/v1/api/media/:id/",
-  "queryParamsUsed": "?token=<jwt token>&id=<media id>",
+  "mediaPath": "/v1/account/media/:id/",
+  "queryParamsUsed": "?token=<jwt token>&id=<media id>&test=<true to show test behaviour>",
   "license": "Apache-2.0"
 }

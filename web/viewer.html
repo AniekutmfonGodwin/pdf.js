@@ -27,8 +27,10 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#if GENERIC || CHROME-->
     <meta name="google" content="notranslate">
 <!--#endif-->
-    <title>PDF.js viewer</title>
-
+    <title>PDF viewer</title>
+    <style type="text/css" media="print">
+        * { display: none; }
+    </style>
 <!--#if MOZCENTRAL-->
 <!--#include viewer-snippet-firefox-extension.html-->
 <!--#endif-->
@@ -70,6 +72,7 @@ See https://github.com/adobe-type-tools/cmap-resources
   </head>
 
   <body tabindex="1">
+    
     <div id="outerContainer">
 
       <div id="sidebarContainer">

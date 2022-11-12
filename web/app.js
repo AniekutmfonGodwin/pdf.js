@@ -140,7 +140,7 @@ const KNOWN_GENERATORS = [
 ];
 
 // TODO IE helper
-class IntellectualExploreHelper {
+class IEhelper {
   paramsToObject(entries) {
     const result = {};
     for (const [key, value] of entries) {
@@ -152,9 +152,7 @@ class IntellectualExploreHelper {
 
   isDev() {
     const baseUrl = window.location.origin;
-    return ["localhost", "127.0.0.1"].every(hostname =>
-      baseUrl.includes(hostname)
-    );
+    return baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1");
   }
 
   getQueryParams() {
@@ -174,7 +172,7 @@ class IntellectualExploreHelper {
     return ieAPIUrl + mediaPath;
   }
 
-  async getPdfData(test) {
+  async getPdfData() {
     let pdfData = atob(
       "JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwog" +
         "IC9QYWdlcyAyIDAgUgo+PgplbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXMKICAv" +
@@ -191,19 +189,19 @@ class IntellectualExploreHelper {
         "dCAxIDAgUgo+PgpzdGFydHhyZWYKNDkyCiUlRU9G"
     );
 
+    const { token, id, media, test } = this.getQueryParams();
     if (test) {
       return pdfData;
     }
 
-    const { token, id, media } = this.getQueryParams();
     const res = await fetch(this.getUrl(id || media), {
-      method: "POST",
+      method: "GET",
       headers: {
         Authorization: `JWT ${token}`,
       },
     });
     const data = await res.json();
-    pdfData = data.data;
+    pdfData = data?.metadata?.data;
     if (pdfData) {
       pdfData = atob(pdfData);
     }
@@ -324,7 +322,7 @@ const PDFViewerApplication = {
   baseUrl: "",
   _downloadUrl: "",
   externalServices: DefaultExternalServices,
-  IEServices: IntellectualExploreHelper,
+  IEServices: IEhelper,
   _boundEvents: Object.create(null),
   documentInfo: null,
   metadata: null,
@@ -970,7 +968,13 @@ const PDFViewerApplication = {
    *                      is opened.
    */
   async open(file, args) {
-    const pdfData = await new IntellectualExploreHelper().getPdfData();
+    let pdfData;
+    try {
+      pdfData = await new IEhelper().getPdfData();
+    } catch (error) {
+      console.error("Authentication required. Test pdf will be shown.");
+      console.error(error);
+    }
     // TODO check
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
@@ -1926,7 +1930,7 @@ const PDFViewerApplication = {
 
     _boundEvents.beforePrint = this.beforePrint.bind(this);
     _boundEvents.afterPrint = this.afterPrint.bind(this);
-
+    // TODO disable features
     eventBus._on("resize", webViewerResize);
     eventBus._on("hashchange", webViewerHashchange);
     eventBus._on("beforeprint", _boundEvents.beforePrint);
@@ -1949,8 +1953,8 @@ const PDFViewerApplication = {
       "switchannotationeditorparams",
       webViewerSwitchAnnotationEditorParams
     );
-    eventBus._on("print", webViewerPrint);
-    eventBus._on("download", webViewerDownload);
+    // eventBus._on("print", webViewerPrint);
+    // eventBus._on("download", webViewerDownload);
     eventBus._on("firstpage", webViewerFirstPage);
     eventBus._on("lastpage", webViewerLastPage);
     eventBus._on("nextpage", webViewerNextPage);
@@ -1979,8 +1983,8 @@ const PDFViewerApplication = {
       eventBus._on("pagechanging", _boundEvents.reportPageStatsPDFBug);
     }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      eventBus._on("fileinputchange", webViewerFileInputChange);
-      eventBus._on("openfile", webViewerOpenFile);
+      // eventBus._on("fileinputchange", webViewerFileInputChange);
+      // eventBus._on("openfile", webViewerOpenFile);
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       eventBus._on(
