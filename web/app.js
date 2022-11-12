@@ -58,6 +58,7 @@ import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AnnotationEditorParams } from "./annotation_editor_params.js";
 import { OverlayManager } from "./overlay_manager.js";
+import PACKAGE from "../package.json";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
 import { PDFDocumentProperties } from "./pdf_document_properties.js";
@@ -137,6 +138,78 @@ const KNOWN_GENERATORS = [
   "aspose.cells",
   "fpdf",
 ];
+
+// TODO IE helper
+class IntellectualExploreHelper {
+  paramsToObject(entries) {
+    const result = {};
+    for (const [key, value] of entries) {
+      // each 'entry' is a [key, value] tupple
+      result[key] = value;
+    }
+    return result;
+  }
+
+  isDev() {
+    const baseUrl = window.location.origin;
+    return ["localhost", "127.0.0.1"].every(hostname =>
+      baseUrl.includes(hostname)
+    );
+  }
+
+  getQueryParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const entries = urlParams.entries();
+    return this.paramsToObject(entries);
+  }
+
+  getUrl(id) {
+    let ieAPIUrl = PACKAGE.ieAPIUrl;
+    const localAPIUrl = PACKAGE.localAPIUrl;
+
+    if (this.isDev()) {
+      ieAPIUrl = localAPIUrl;
+    }
+    const mediaPath = PACKAGE.mediaPath.replace(":id", id);
+    return ieAPIUrl + mediaPath;
+  }
+
+  async getPdfData(test) {
+    let pdfData = atob(
+      "JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwog" +
+        "IC9QYWdlcyAyIDAgUgo+PgplbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXMKICAv" +
+        "TWVkaWFCb3ggWyAwIDAgMjAwIDIwMCBdCiAgL0NvdW50IDEKICAvS2lkcyBbIDMgMCBSIF0K" +
+        "Pj4KZW5kb2JqCgozIDAgb2JqCjw8CiAgL1R5cGUgL1BhZ2UKICAvUGFyZW50IDIgMCBSCiAg" +
+        "L1Jlc291cmNlcyA8PAogICAgL0ZvbnQgPDwKICAgICAgL0YxIDQgMCBSIAogICAgPj4KICA+" +
+        "PgogIC9Db250ZW50cyA1IDAgUgo+PgplbmRvYmoKCjQgMCBvYmoKPDwKICAvVHlwZSAvRm9u" +
+        "dAogIC9TdWJ0eXBlIC9UeXBlMQogIC9CYXNlRm9udCAvVGltZXMtUm9tYW4KPj4KZW5kb2Jq" +
+        "Cgo1IDAgb2JqICAlIHBhZ2UgY29udGVudAo8PAogIC9MZW5ndGggNDQKPj4Kc3RyZWFtCkJU" +
+        "CjcwIDUwIFRECi9GMSAxMiBUZgooSGVsbG8sIHdvcmxkISkgVGoKRVQKZW5kc3RyZWFtCmVu" +
+        "ZG9iagoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDEwIDAwMDAwIG4g" +
+        "CjAwMDAwMDAwNzkgMDAwMDAgbiAKMDAwMDAwMDE3MyAwMDAwMCBuIAowMDAwMDAwMzAxIDAw" +
+        "MDAwIG4gCjAwMDAwMDAzODAgMDAwMDAgbiAKdHJhaWxlcgo8PAogIC9TaXplIDYKICAvUm9v" +
+        "dCAxIDAgUgo+PgpzdGFydHhyZWYKNDkyCiUlRU9G"
+    );
+
+    if (test) {
+      return pdfData;
+    }
+
+    const { token, id, media } = this.getQueryParams();
+    const res = await fetch(this.getUrl(id || media), {
+      method: "POST",
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    const data = await res.json();
+    pdfData = data.data;
+    if (pdfData) {
+      pdfData = atob(pdfData);
+    }
+    return pdfData;
+  }
+}
 
 class DefaultExternalServices {
   constructor() {
@@ -251,6 +324,7 @@ const PDFViewerApplication = {
   baseUrl: "",
   _downloadUrl: "",
   externalServices: DefaultExternalServices,
+  IEServices: IntellectualExploreHelper,
   _boundEvents: Object.create(null),
   documentInfo: null,
   metadata: null,
@@ -896,6 +970,8 @@ const PDFViewerApplication = {
    *                      is opened.
    */
   async open(file, args) {
+    const pdfData = await new IntellectualExploreHelper().getPdfData();
+    // TODO check
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
       await this.close();
@@ -905,9 +981,11 @@ const PDFViewerApplication = {
     for (const key in workerParameters) {
       GlobalWorkerOptions[key] = workerParameters[key];
     }
-
+    // TODO file data goes here
     const parameters = Object.create(null);
-    if (typeof file === "string") {
+    if (pdfData) {
+      parameters.data = pdfData;
+    } else if (typeof file === "string") {
       // URL
       this.setTitleUsingUrl(file, /* downloadUrl = */ file);
       parameters.url = file;
@@ -2261,6 +2339,7 @@ function webViewerInitialized() {
   try {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (file) {
+        // TODO pdf reader called here
         PDFViewerApplication.open(file);
       } else {
         PDFViewerApplication._hideViewBookmark();
